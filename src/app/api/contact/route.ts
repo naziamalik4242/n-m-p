@@ -1,28 +1,18 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { Resend } from 'resend';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma"; // Jo file abhi banayi usay import karein
 
 export async function POST(req: Request) {
   try {
-    const { name, email, message } = await req.json();
+    const body = await req.json();
+    const { name, email, message } = body;
 
-    // Database save
-    await prisma.message.create({
+    const contact = await prisma.contact.create({
       data: { name, email, message },
     });
 
-    // Email notification
-    await resend.emails.send({
-      from: 'Portfolio <onboarding@resend.dev>',
-      to: process.env.CONTACT_EMAIL!,
-      subject: `New Inquiry from ${name}`,
-      text: `Name: ${name}\nEmail: ${email}\n\nMessage: ${message}`,
-    });
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json(contact);
   } catch (error) {
-    return NextResponse.json({ error: "Failed to send" }, { status: 500 });
+    console.error("Contact API Error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
